@@ -1,5 +1,5 @@
-# app/scraper.py
 import asyncio
+import json
 from typing import Dict, List, Tuple, Any
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 import httpx
@@ -110,26 +110,24 @@ async def main():
     urls_input = input("Enter URLs separated by commas:\n> ")
     urls = [u.strip() for u in urls_input.split(",") if u.strip()]
 
-    print(f"\n Fetching {len(urls)} URLs concurrently...\n")
+    print(f"\n🔍 Fetching {len(urls)} URLs concurrently...\n")
     results = await scrape_urls_concurrent(urls, concurrency=3)
 
-    print("\n Full Scraped & Parsed Results:\n")
+    full_data = []
     for r in results:
-        print(f"URL: {r['url']}")
-        print(f"Status: {r['status']}")
-        print(f"Title: {r['title']}")
-        if r.get("error"):
-            print(f"Error: {r['error']}")
-            continue
-        structured_data = parse_general_content(r['html'])
-        print("\n📄 Extracted Structured Content:\n")
-        for k, v in structured_data.items():
-            print(f"{k.upper()}:")
-            print(v)
-            print("-" * 50)
+        entry = {
+            "url": r["url"],
+            "status": r["status"],
+            "title": r["title"],
+            "error": r.get("error"),
+            "structured_content": parse_general_content(r["html"]) if r.get("html") else {}
+        }
+        full_data.append(entry)
 
-        print("\n" + "=" * 80 + "\n")
-
+    # Store to JSON file
+    output_file = "scraped_results.json"
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(full_data, f, ensure_ascii=False, indent=2)
 
 if __name__ == "__main__":
     asyncio.run(main())
