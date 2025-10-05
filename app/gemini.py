@@ -1,4 +1,3 @@
-# app/gemini_client.py
 import os
 import json
 from typing import List, Dict
