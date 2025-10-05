@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
-google-genai
+google-generativeai
 playwright
 beautifulsoup4
 httpx
