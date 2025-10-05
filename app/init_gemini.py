@@ -1,55 +1,70 @@
+# app/gemini_client.py
 import os
 import json
 from typing import List, Dict
 from dotenv import load_dotenv
 import google.generativeai as genai
 
+# Load .env
 load_dotenv()
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
-    raise RuntimeError("Set GEMINI_API_KEY env var")
-
+    raise RuntimeError("Set GEMINI_API_KEY environment variable.")
 genai.configure(api_key=API_KEY)
+
+FUNCTION_SCHEMA = {
+    "name": "get_candidate_urls",
+    "description": "Return structured list of candidate URLs for the user query.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "urls": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "url": {"type": "string"},
+                        "snippet": {"type": "string"},
+                        "confidence": {"type": "number"},
+                    },
+                        "required": ["url"],
+                },
+            },
+        },
+        "required": ["urls"],
+    },
+}
 
 
 def ask_gemini_for_urls(user_query: str, top_k: int = 5) -> List[Dict]:
-    """
-    Calls Gemini to request top_k candidate URLs for the query.
-    Returns list of dicts: [{'url':..., 'snippet':..., 'confidence':...}, ...]
-    """
-    system_prompt = (
-        "You are a web-research assistant. Given a user search query, return a JSON array of "
-        f"the top {top_k} URLs where the answer can be found. "
-        "Respond strictly in valid JSON format: "
-        "[{\"url\": \"...\", \"snippet\": \"...\", \"confidence\": 0.9}, ...]"
-    )
-
+    
     model = genai.GenerativeModel("gemini-2.5-flash")
 
-    response = model.generate_content(
-        f"{system_prompt}\n\nQuery: {user_query}"
+    prompt = (
+        f"You are a helpful web research assistant. "
+        f"Find the top {top_k} websites where the answer to the following query can be found. "
+        f"Return your result via the 'get_candidate_urls' function."
+        f"\n\nQuery: {user_query}"
     )
 
-    text = response.text.strip()
+    response = model.generate_content(
+        contents=[{"role": "user", "parts": [prompt]}],
+        tools=[{"function_declarations": [FUNCTION_SCHEMA]}],
+        tool_config={"function_calling_config": {"mode": "ANY"}}
+    )
+
+    urls = []
     try:
-        urls = json.loads(text)
-        if not isinstance(urls, list):
-            raise ValueError("Response is not a list")
+        part = response.candidates[0].content.parts[0]
+        if hasattr(part, "function_call") and part.function_call:
+            args_text = part.function_call.args
+            parsed = json.loads(args_text)
+            urls = parsed.get("urls", [])
+        else:
+            raise ValueError("No valid function_call found in response.")
     except Exception as e:
-        print("Raw response:\n", text)
-        raise e
+        print("Raw Gemini response:\n", response)
+        raise RuntimeError(f"Failed to parse Gemini output: {e}")
 
     return urls[:top_k]
-
-
-def main():
-    query = input("Query: ")
-    urls = ask_gemini_for_urls(query, top_k=5)
-    print("\nTop URLs:")
-    for u in urls:
-        print("-", u["url"])
-
-
-if __name__ == "__main__":
-    main()
