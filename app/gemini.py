@@ -37,7 +37,6 @@ FUNCTION_SCHEMA = {
 
 
 def ask_gemini_for_urls(user_query: str, top_k: int = 5) -> List[Dict]:
-    
     model = genai.GenerativeModel("gemini-2.5-flash")
 
     prompt = (
@@ -57,9 +56,8 @@ def ask_gemini_for_urls(user_query: str, top_k: int = 5) -> List[Dict]:
     try:
         part = response.candidates[0].content.parts[0]
         if hasattr(part, "function_call") and part.function_call:
-            args_text = part.function_call.args
-            parsed = json.loads(args_text)
-            urls = parsed.get("urls", [])
+            args_map = part.function_call.args
+            urls = list(args_map.get("urls", []))
         else:
             raise ValueError("No valid function_call found in response.")
     except Exception as e:
