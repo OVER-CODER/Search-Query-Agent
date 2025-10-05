@@ -1,11 +1,11 @@
 # app/scraper.py
 import asyncio
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 import httpx
 from bs4 import BeautifulSoup
 
-DEFAULT_TIMEOUT = 15000  # ms
+DEFAULT_TIMEOUT = 15000
 
 async def fetch_with_playwright(url: str, timeout: int = DEFAULT_TIMEOUT) -> Tuple[str, Dict]:
     try:
@@ -62,28 +62,74 @@ async def scrape_urls_concurrent(urls: List[str], concurrency: int = 3) -> List[
         results.append(res)
     return results
 
+def parse_general_content(html: str) -> Dict[str, Any]:
+    soup = BeautifulSoup(html, "html.parser")
+    content = {
+        "headings": [],
+        "paragraphs": [],
+        "lists": [],
+        "tables": [],
+        "links": [],
+        "ids": []
+    }
 
+    for level in range(1, 7):
+        for h in soup.find_all(f"h{level}"):
+            content["headings"].append({"level": level, "text": h.get_text(strip=True)})
+
+    for p in soup.find_all("p"):
+        content["paragraphs"].append(p.get_text(strip=True))
+
+    for ul in soup.find_all(["ul", "ol"]):
+        items = [li.get_text(strip=True) for li in ul.find_all("li")]
+        if items:
+            content["lists"].append(items)
+
+    for table in soup.find_all("table"):
+        table_data = []
+        rows = table.find_all("tr")
+        headers = [th.get_text(strip=True) for th in rows[0].find_all(["th", "td"])] if rows else []
+        for row in rows[1:]:
+            cells = [td.get_text(strip=True) for td in row.find_all("td")]
+            if headers and len(cells) == len(headers):
+                table_data.append(dict(zip(headers, cells)))
+            else:
+                table_data.append(cells)
+        if table_data:
+            content["tables"].append(table_data)
+
+    for a in soup.find_all("a", href=True):
+        content["links"].append({"text": a.get_text(strip=True), "href": a["href"]})
+
+    for tag in soup.find_all(attrs={"id": True}):
+        content["ids"].append(tag["id"])
+
+    return content
 
 async def main():
     urls_input = input("Enter URLs separated by commas:\n> ")
     urls = [u.strip() for u in urls_input.split(",") if u.strip()]
 
-    print(f"\n🔍 Fetching {len(urls)} URLs concurrently...\n")
+    print(f"\n Fetching {len(urls)} URLs concurrently...\n")
     results = await scrape_urls_concurrent(urls, concurrency=3)
 
-    print("\n✅ Full Scraped Results:\n")
+    print("\n Full Scraped & Parsed Results:\n")
     for r in results:
         print(f"URL: {r['url']}")
         print(f"Status: {r['status']}")
         print(f"Title: {r['title']}")
         if r.get("error"):
             print(f"Error: {r['error']}")
-        print("\n----- HTML Content Start -----\n")
-        print(r['html'][:5000])
-        print("\n----- HTML Content End -----\n")
-        print("-" * 80)
+            continue
+        structured_data = parse_general_content(r['html'])
+        print("\n📄 Extracted Structured Content:\n")
+        for k, v in structured_data.items():
+            print(f"{k.upper()}:")
+            print(v)
+            print("-" * 50)
+
+        print("\n" + "=" * 80 + "\n")
 
 
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(main())
