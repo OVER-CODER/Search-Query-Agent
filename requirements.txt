@@ -1,1 +1,11 @@
-ollama
+fastapi
+uvicorn[standard]
+google-genai
+playwright
+beautifulsoup4
+httpx
+aiofiles
+python-dotenv
+anyio
+nest-asyncio
+lxml

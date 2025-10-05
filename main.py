@@ -4,7 +4,7 @@ convo = []
 
 def get_response():
     global convo
-    response = ollama.chat("llama3.2:1b", messages=convo, stream=True)
+    response = ollama.chat("llama3.1:8b", messages=convo, stream=True)
     complete_response = ""
     for chunk in response:
         print(chunk['message']['content'], end='', flush=True)
