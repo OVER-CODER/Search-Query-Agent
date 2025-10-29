@@ -1,20 +1,95 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "sqa"
+name = "search-query-agent"
 version = "0.1.0"
-description = "Add your description here"
+description = "Local search-query agent with QLoRA fine-tuning"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
-    "aiofiles>=24.1.0",
-    "anyio>=4.11.0",
-    "beautifulsoup4>=4.14.2",
-    "fastapi>=0.118.0",
-    "google-generativeai>=0.8.5",
-    "httpx>=0.28.1",
-    "lxml>=6.0.2",
-    "nest-asyncio>=1.6.0",
+    "torch>=2.0.0",
+    "transformers>=4.35.0",
+    "accelerate>=0.24.0",
+    "peft>=0.6.0",
+    "datasets>=2.14.0",
     "ollama>=0.6.0",
-    "playwright>=1.55.0",
-    "python-dotenv>=1.1.1",
-    "uvicorn[standard]>=0.37.0",
+    "playwright>=1.40.0",
+    "beautifulsoup4>=4.12.0",
+    "httpx>=0.25.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.5.0",
+    "pandas>=2.1.0",
+    "numpy>=1.24.0",
+    "tqdm>=4.66.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.12.0",
+    "black>=23.11.0",
+    "isort>=5.12.0",
+    "flake8>=6.1.0",
+    "aiofiles>=23.2.0",
+    "python-dotenv>=1.0.0",
+    "anyio>=4.0.0",
+    "nest-asyncio>=1.5.0",
+    "lxml>=4.9.0",
 ]
+
+[tool.setuptools.packages.find]
+include = ["app*", "scripts*", "training*", "server*", "scraper*", "formatter*", "extractor*"]
+exclude = ["tests*", "logs*", "results*", "configs*", "checkpoints*", "ollama_model*", "training_data*", "browser_history*"]
+dependencies = [
+    "torch>=2.0.0",
+    "transformers>=4.35.0",
+    "accelerate>=0.24.0",
+    "peft>=0.6.0",
+    "datasets>=2.14.0",
+    "ollama>=0.6.0",
+    "playwright>=1.40.0",
+    "beautifulsoup4>=4.12.0",
+    "httpx>=0.25.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.5.0",
+    "pandas>=2.1.0",
+    "numpy>=1.24.0",
+    "tqdm>=4.66.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.12.0",
+    "black>=23.11.0",
+    "isort>=5.12.0",
+    "flake8>=6.1.0",
+    "aiofiles>=23.2.0",
+    "python-dotenv>=1.0.0",
+    "anyio>=4.0.0",
+    "nest-asyncio>=1.5.0",
+    "lxml>=4.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "isort", 
+    "flake8",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

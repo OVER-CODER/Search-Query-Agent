@@ -1,8 +1,8 @@
-# Core ML dependencies
+# Core ML dependencies (macOS compatible)
 torch>=2.0.0
 transformers>=4.35.0
 accelerate>=0.24.0
-bitsandbytes>=0.41.0
+# bitsandbytes>=0.41.0  # Not available on macOS
 peft>=0.6.0
 datasets>=2.14.0
 
